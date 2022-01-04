@@ -1,0 +1,27 @@
+[
+    {
+        "name": "淡色地図",
+        "link": "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png",
+        "attrbution": "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+    },
+    {
+        "name": "標準地図",
+        "link": "https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",
+        "attrbution": "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+    },
+    {
+        "name": "色別標高図",
+        "link": "https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png",
+        "attrbution": "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+    },
+    {
+        "name": "写真",
+        "link": "https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",
+        "attrbution": "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+    },
+    {
+        "name": "OpenStreetMap",
+        "link": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "attrbution": "&copy; <a href='http://osm.org/copyright'>OpenStreetMap</a> contributors"
+    }
+]

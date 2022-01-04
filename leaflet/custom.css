@@ -1,0 +1,11 @@
+#map {
+  display: flex;
+  flex-wrap: wrap;
+}
+.map {
+  margin: 0px;
+  padding: 0px;
+  width: 480px;
+  height: 320px;
+  background-color: gray;
+}
