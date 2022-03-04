@@ -3,12 +3,31 @@
   <head>
     <title>OpenLayers 6 サンプル</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="stylesheet" href="./style.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+      integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+      integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+      crossorigin=""
+    ></script>
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css"
       type="text/css"
     />
     <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/build/ol.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/Cesium/Cesium.js"></script>
+    <link
+      href="https://cesium.com/downloads/cesiumjs/releases/1.63.1/Build/Cesium/Widgets/widgets.css"
+      rel="stylesheet"
+    />
     <!--
     <script src="https://rawgit.com/walkermatt/ol3-layerswitcher/master/src/ol3-layerswitcher.js"></script>
     <link rel="stylesheet" href="https://rawgit.com/walkermatt/ol3-layerswitcher/master/src/ol3-layerswitcher.css" />
@@ -21,13 +40,37 @@
     <script src="https://unpkg.com/ol-layerswitcher@3.7.0"></script>
 
     <script src="https://code.jquery.com/jquery-2.2.3.min.js"></script>
+    <style>
+      #cesiumContainer {
+        position: relative; /*absolute;*/
+        top: 0;
+        left: 0;
+        height: 50%;
+        width: 50%;
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+        font-family: sans-serif;
+      }
+    </style>
   </head>
   <body>
+    <div id="cesiumContainer"></div>
+    <div id="mapid"></div>
     <div
       id="map"
       style="font-size: 14px; width: 500px; height: 400px; font-size: 13px"
     ></div>
-
+    <div id="test">
+      <p v-show="errorFlag">サーバとの通信にエラーが発生しています</p>
+      <input v-model="name" /><br />
+      <button v-on:click="createNewUser">作成</button>
+      <ul>
+        <li v-for="user in users">
+          {{ user.name }}:<button v-on:click="deleteUser(user.id)">削除</button>
+        </li>
+      </ul>
+    </div>
     <script>
       (function () {
         var map = new ol.Map({
@@ -136,6 +179,121 @@
         var layerSwitcher = new ol.control.LayerSwitcher();
         map.addControl(layerSwitcher);
       })(); // LayerSwitcher終わり
+    </script>
+    <script>
+      // 選択時に間違ってダブルクリック判定されて拡大するとうざいので無効化、Canvasの方が早いらしいので変更。
+      const map1 = L.map("mapid", {
+        doubleClickZoom: false,
+        preferCanvas: true,
+      });
+
+      /*
+      地図タイルには下記の国土地理院のものを使用します。
+      必要なattributionは使用する地図によって異なるので国土地理院のWEBサイトを参照してください。
+      https://maps.gsi.go.jp/development/ichiran.html#pale2
+
+      標準地図 https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png
+      淡色地図 https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png
+      白地図 https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png
+      */
+      L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png", {
+        attribution: `<a href='https://maps.gsi.go.jp/development/ichiran.html' target='_blank'>地理院タイル</a> Shoreline data is derived from: United States. National Imagery and Mapping Agency. "Vector Map Level 0 (VMAP0)." Bethesda, MD: Denver, CO: The Agency; USGS Information Services, 1997.`,
+      }).addTo(map1);
+
+      // とりあえず東京を中心に表示
+      const centerLatLang = [35.7010141, 139.7042647];
+      map1.setView(centerLatLang, 9);
+
+      // 読み込んだ都道府県ごとのレイヤーをキャッシュする用の変数
+      const layers = {};
+      axios.defaults.baseURL = "https://jsonplaceholder.typicode.com";
+      axios.defaults.headers.common["Authorization"] = `Bearer token_id`;
+      new Vue({
+        el: "#test",
+        data: {
+          users: [],
+          name: "",
+          errorFlag: false,
+        },
+        methods: {
+          getData() {
+            axios
+              .get("/users?name=Glenna Reichert")
+              .then((response) => (this.users = response.data))
+              .catch((error) => console.log(error));
+            axios
+              .get("/users", {
+                params: {
+                  name: "Glenna Reichert",
+                },
+              })
+              .then((response) => (this.users = response.data))
+              .catch((error) => console.log(error));
+          },
+          createNewUser() {
+            axios
+              .post("/users", {
+                name: this.name,
+              })
+              .then((response) => this.users.unshift(response.data))
+              .catch((error) => console.log(error));
+          },
+          deleteUser(id) {
+            axios
+              .delete("/users/" + id)
+              .then((response) => console.log(response))
+              .catch((error) => console.log(error));
+          },
+          updateUser() {
+            axios
+              .patch("/users/1", {
+                name: "John Doe",
+              })
+              .then((response) => this.users.unshift(response.data))
+              .catch((error) => console.log(error));
+          },
+        },
+        mounted: function () {
+          axios
+            .get("/users")
+            .then((response) => {
+              console.log(response.data);
+              console.log(response.status);
+              console.log(response.headers);
+              console.log(response.statusText);
+              console.log(response.config);
+              this.users = response.data;
+            })
+            .catch((error) => {
+              console.log(error);
+              console.log(JSON.stringify(error));
+              console.log(error.name);
+              console.log(error.message);
+              console.log(error.request);
+              console.log(error.response);
+              this.errorFlag = true;
+            });
+        },
+      });
+    </script>
+    <script>
+      var viewer = new Cesium.Viewer("cesiumContainer", {
+        imageryProvider: new Cesium.createOpenStreetMapImageryProvider({
+          url: "https://cyberjapandata.gsi.go.jp/xyz/std/",
+          credit: new Cesium.Credit(
+            "地理院タイル",
+            "",
+            "https://maps.gsi.go.jp/development/ichiran.html"
+          ),
+        }),
+        baseLayerPicker: false,
+        geocoder: false,
+        homeButton: false,
+      });
+
+      viewer.camera.setView({
+        destination: Cesium.Cartesian3.fromDegrees(140.0, 36.14, 20000000.0),
+      });
     </script>
   </body>
 </html>
